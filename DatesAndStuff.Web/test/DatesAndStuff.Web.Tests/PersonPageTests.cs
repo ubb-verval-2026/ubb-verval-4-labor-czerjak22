@@ -98,7 +98,10 @@ public class PersonPageTests
     }
 
     [Test]
-    public void Person_SalaryIncrease_ShouldIncrease()
+    [TestCase("5")]
+    [TestCase("12.5")]
+    [TestCase("15")]
+    public void Person_SalaryIncrease_ShouldIncrease(String inputprecent)
     {
         // Arrange
         driver.Navigate().GoToUrl(BaseURL);
@@ -106,19 +109,30 @@ public class PersonPageTests
 
         var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
 
+         var salaryLabel = wait.Until(ExpectedConditions.ElementExists(By.XPath("//*[@data-test='DisplayedSalary']")));
+         var salaryBeforeSubmission = double.Parse(salaryLabel.Text);
+        // double salaryBeforeSubmission = 5000.0; 
+        
         var input = wait.Until(ExpectedConditions.ElementExists(By.XPath("//*[@data-test='SalaryIncreasePercentageInput']")));
         input.Clear();
-        input.SendKeys("5");
+        input.SendKeys(inputprecent);
 
         // Act
         var submitButton = wait.Until(ExpectedConditions.ElementExists(By.XPath("//*[@data-test='SalaryIncreaseSubmitButton']")));
         submitButton.Click();
 
-
         // Assert
-        var salaryLabel = wait.Until(ExpectedConditions.ElementExists(By.XPath("//*[@data-test='DisplayedSalary']")));
+        // wait.Until(ExpectedConditions.StalenessOf(salaryLabel));
+        wait.Until(d =>
+        {
+            var currentText = d.FindElement(By.XPath("//*[@data-test='DisplayedSalary']")).Text;
+            var currentVal = double.Parse(currentText);
+            return currentVal != salaryBeforeSubmission;
+        });
+        salaryLabel = wait.Until(ExpectedConditions.ElementExists(By.XPath("//*[@data-test='DisplayedSalary']")));
         var salaryAfterSubmission = double.Parse(salaryLabel.Text);
-        salaryAfterSubmission.Should().BeApproximately(5250, 0.001);
+        var salarycalculated = salaryBeforeSubmission + salaryBeforeSubmission *( double.Parse(inputprecent) / 100.0);
+        salaryAfterSubmission.Should().BeApproximately(salarycalculated, 0.001);
     }
     private bool IsElementPresent(By by)
     {
