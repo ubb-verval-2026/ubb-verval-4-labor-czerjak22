@@ -1,11 +1,11 @@
-using System.Diagnostics;
-using System.Reflection;
-using System.Text;
 using FluentAssertions;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
 using SeleniumExtras.WaitHelpers;
+using System.Diagnostics;
+using System.Reflection;
+using System.Text;
 
 namespace DatesAndStuff.Web.Tests;
 
@@ -165,6 +165,156 @@ public class PersonPageTests
         var fieldError = wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//*[@data-test='SalaryIncreasePercentageInput']/following-sibling::div[@class='validation-message']")));
         fieldError.Text.Should().Contain("-10"); 
     }
+
+    [Test]
+    public void Wizz_air_test()
+    {
+        driver.Navigate().GoToUrl("https://www.wizzair.com/en-gb");
+
+        WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+
+
+       
+      //  ORIGIN
+
+       var destinationInput = wait.Until(
+           SeleniumExtras.WaitHelpers.ExpectedConditions
+           .ElementToBeClickable(
+               By.XPath("//*[@data-test='search-departure-station']"))
+       );
+
+        destinationInput.Click();
+        //cookies
+        try
+        {
+            var cookies = wait.Until(ExpectedConditions.ElementExists(By.XPath("//*[@id='accept']")));
+            cookies.Click();
+        }
+        catch
+        {
+        }
+        destinationInput.SendKeys("Budapest");
+
+        // BUD
+        var budapestOption = wait.Until(
+            SeleniumExtras.WaitHelpers.ExpectedConditions
+            .ElementToBeClickable(
+                By.XPath("//*[@data-test='BUD']"))
+        );
+
+        budapestOption.Click();
+
+
+        // DESTINATION
+
+        var originInput = wait.Until(
+            SeleniumExtras.WaitHelpers.ExpectedConditions
+            .ElementToBeClickable(
+                By.XPath("//*[@data-test='search-arrival-station']"))
+        );
+
+        originInput.Click();
+        originInput.SendKeys("Bucharest");
+
+        // OTP
+        var otpOption = wait.Until(
+            SeleniumExtras.WaitHelpers.ExpectedConditions
+            .ElementToBeClickable(
+                By.XPath("//*[@data-test='OTP']"))
+        );
+
+        otpOption.Click();
+
+       
+
+
+        DateTime nextWeek = DateTime.Now.AddDays(7);
+
+        string formattedDate =
+            $"{nextWeek.Year}-{nextWeek.Month:D2}-{nextWeek.Day:D2}";
+
+        // DAY SELECT
+        var dayButton = wait.Until(
+            SeleniumExtras.WaitHelpers.ExpectedConditions
+            .ElementToBeClickable(
+                By.XPath($"//div[contains(@class,'id-{formattedDate}')]//span"))
+        );
+
+        dayButton.Click();
+        dayButton.Click();
+
+      
+
+        // SEARCH
+        var searchButton = wait.Until(
+            SeleniumExtras.WaitHelpers.ExpectedConditions
+            .ElementToBeClickable(
+                By.XPath("//*[@data-test='flight-search-submit']"))
+        );
+
+        searchButton.Click();
+
+        // RESULTS
+        try
+        {
+            wait.Until(driver =>
+                driver.FindElements(
+                    By.XPath("//*[@data-test='flight-card']"))
+                .Count > 0
+            );
+        }
+        catch (Exception ex)
+        {
+            Assert.Fail("no flights found");
+            return;
+            //var notfound=wait.Until(ExpectedConditions.ElementIsVisible.XPath("//*[@data-test='no-flights-available']"));
+        }
+
+        var flights = driver.FindElements(
+            By.XPath("//*[@data-test='flight-card']"));
+
+
+        //bonusz
+        int maxPrice = 200;
+
+  
+        var prices = driver.FindElements(
+            By.XPath("//*[contains(@class,'price')]"));
+
+        foreach (var price in prices)
+        {
+            string text = price.Text;
+
+        
+            string numbersOnly = new string(text.Where(char.IsDigit).ToArray());
+
+            if (!string.IsNullOrEmpty(numbersOnly))
+            {
+                int currentPrice = int.Parse(numbersOnly);
+
+                if (currentPrice < maxPrice)
+                {
+                    Screenshot screenshot =
+                        ((ITakesScreenshot)driver).GetScreenshot();
+
+                    string desktopPath =
+                        Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+
+                    string filePath =
+                        Path.Combine(desktopPath, "kep.png");
+
+                    screenshot.SaveAsFile(filePath);
+
+                    Assert.Pass($"Cheap flight found: {currentPrice} RON");
+                }
+            }
+        }
+
+        // ASSERT
+        Assert.That(flights.Count, Is.GreaterThanOrEqualTo(2),
+            "Nincs legalább 2 járat Bucharest és Budapest között.");
+    }
+
     private bool IsElementPresent(By by)
     {
         try
