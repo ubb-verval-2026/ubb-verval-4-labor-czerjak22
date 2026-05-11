@@ -134,6 +134,37 @@ public class PersonPageTests
         var salarycalculated = salaryBeforeSubmission + salaryBeforeSubmission *( double.Parse(inputprecent) / 100.0);
         salaryAfterSubmission.Should().BeApproximately(salarycalculated, 0.001);
     }
+
+    [Test]
+    [TestCase("-11")]
+    [TestCase("-50")]
+    public void Person_SalaryIncrease_BelowMinus10_ShouldShowErrorMessages(string inputPercent)
+    {
+
+        driver.Navigate().GoToUrl(BaseURL);
+        driver.FindElement(By.XPath("//*[@data-test='PersonPageNavigation']")).Click();
+        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
+
+        var navButton = wait.Until(ExpectedConditions.ElementToBeClickable(By.XPath("//*[@data-test='PersonPageNavigation']")));
+        navButton.Click();
+
+       
+        var input = wait.Until(ExpectedConditions.ElementToBeClickable(By.XPath("//*[@data-test='SalaryIncreasePercentageInput']")));
+
+        input.Clear(); 
+        input.SendKeys(inputPercent);
+
+        // Act
+        var submitButton = driver.FindElement(By.XPath("//*[@data-test='SalaryIncreaseSubmitButton']"));
+        submitButton.Click();
+
+
+        var errorMsg = wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//*[contains(text(), '-10') and contains(text(), 'infinity')]")));
+        errorMsg.Text.Should().NotBeNullOrWhiteSpace();
+
+        var fieldError = wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//*[@data-test='SalaryIncreasePercentageInput']/following-sibling::div[@class='validation-message']")));
+        fieldError.Text.Should().Contain("-10"); 
+    }
     private bool IsElementPresent(By by)
     {
         try
