@@ -136,6 +136,7 @@ public class PersonPageTests
     }
 
     [Test]
+    [TestCase("-10")]
     [TestCase("-11")]
     [TestCase("-50")]
     public void Person_SalaryIncrease_BelowMinus10_ShouldShowErrorMessages(string inputPercent)
